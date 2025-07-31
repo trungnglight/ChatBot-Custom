@@ -1,5 +1,4 @@
 import os
-import requests
 import pandas as pd
 from io import BytesIO
 from tempfile import SpooledTemporaryFile
@@ -25,6 +24,8 @@ load_dotenv()
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "")
 LL_MODEL = os.getenv("LL_MODEL", "")
 OPENAI_API_KEY = SecretStr(os.getenv("OPENAI_API_KEY", "ollama"))
+MAX_TOKENS = int(os.getenv("MAX_TOKENS", 8192))
+MODEL_TEMPERATURE = float(os.getenv("TEMPERATURE", 0.01))
 
 # System prompt to input to LLM
 PROMPT = PromptTemplate.from_template(
@@ -85,7 +86,7 @@ intent_llm = ChatOpenAI(
     base_url=f"{OLLAMA_HOST}/v1/",
     model=LL_MODEL,
     api_key=OPENAI_API_KEY,
-    temperature=0,
+    temperature=MODEL_TEMPERATURE,
 )
 
 
@@ -118,7 +119,7 @@ def analyze_dataframe_with_agent(df: pd.DataFrame, instruction: str) -> Iterator
             base_url=f"{OLLAMA_HOST}/v1/",
             model=LL_MODEL,
             api_key=OPENAI_API_KEY,
-            temperature=0,
+            temperature=MODEL_TEMPERATURE,
         ),
         df=df,
         verbose=False,
@@ -183,7 +184,7 @@ def summarize_with_docling(
             base_url=f"{OLLAMA_HOST}/v1/",
             model=LL_MODEL,
             api_key=OPENAI_API_KEY,
-            temperature=0.2,
+            temperature=MODEL_TEMPERATURE,
         )
 
         return summarizer.invoke(f"{instruction}\n\n{markdown[:5000]}")
@@ -211,8 +212,8 @@ class ChatBot:
             base_url=f"{OLLAMA_HOST}/v1/",
             model=LL_MODEL,
             api_key=OPENAI_API_KEY,
-            temperature=0.4,
-            max_completion_tokens=2000,
+            temperature=MODEL_TEMPERATURE,
+            max_completion_tokens=MAX_TOKENS,
             top_p=0.9,
         )
         self.llm_chain = PROMPT | self.llm
